@@ -1,5 +1,8 @@
 var five = require("johnny-five"),
   board, lcd, buttons, error_pot = 90, pot;
+var infra = false;
+var val_infra = 11;
+
 
 board = new five.Board();
 
@@ -42,17 +45,34 @@ board.on("ready", function() {
     paint_screen(cur_screen);
   });
 
+  var proximity = new five.Proximity({
+    controller: "GP2Y0A21YK",
+    pin: "A1"
+  });
+
+  proximity.on("data", function() {
+    // console.log("Proximity: ");
+    // console.log("  in  : ", this.in);
+    // console.log("-----------------");
+    if (this.in > val_infra && infra === false) {
+      infra = true;
+      console.log("activado");
+      values[cur_screen] = pot.value;
+      paint_screen(cur_screen);
+    } else if (infra === true && this.in < val_infra) {
+      infra = false;
+      console.log("desactivado");
+    }
+
+  });
+
   buttons.on("data", function (){
-    // console.log(this.value);
     if (this.value >= 317 - error_pot && this.value <= 317 + error_pot) {
       if (cur_screen === 0) cur_screen = 3;
       cur_screen--;
       paint_screen(cur_screen);
     }
-    if (this.value >= 90 - error_pot && this.value <= 90 + error_pot) {
-      values[cur_screen] = pot.value;
-      paint_screen(cur_screen);
-    }
+
     if (this.value >= 710 - error_pot && this.value <= 710 + error_pot) {
       cur_screen++;
       if (cur_screen === 3) cur_screen = 0;
